@@ -1,0 +1,281 @@
+Create a full-stack modern web application for a startup called “MindForge Hub”.
+
+📌 Brand Position:
+MindForge Hub is a “Guided Project Development & Academic Support Platform” that helps students build academic projects with expert guidance. Use ethical, professional wording like “we guide and assist”.
+
+---
+
+🎨 UI Design:
+
+* Dark theme (blue/purple gradient)
+* Glassmorphism UI
+* Smooth animations
+* Fully responsive
+* Clean modern fonts
+
+---
+
+🌐 FRONTEND (React + Vite)
+
+Create pages:
+
+1. HOME PAGE
+
+* Hero Section:
+  “Struggling with your Final Year Project?”
+  “We guide you to build it from scratch with complete support”
+
+* Buttons:
+
+  * Get Project Guidance → opens Google Form
+  * Explore Services → scroll
+
+* Sections:
+
+  * Services highlights
+  * Testimonials (placeholder)
+  * Why choose us
+
+---
+
+2. SERVICES PAGE
+   Include:
+
+* Project Guidance
+* Documentation Services
+* Viva Training
+
+---
+
+3. DOMAINS PAGE
+   Cards:
+   AI/ML, Data Science, Web Dev, Python, Java, IoT, Cloud, Cybersecurity, UI/UX
+
+---
+
+4. PORTFOLIO PAGE
+   Show sample projects:
+
+* Plant Disease Detection
+* Sentiment Analysis
+* Disaster Management
+
+---
+
+5. HOW IT WORKS
+
+Steps:
+
+1. Fill Form
+2. Get Quote
+3. Pay Advance
+4. Development Starts
+5. Final Payment
+6. Delivery + Explanation
+
+---
+
+6. CONTACT PAGE
+
+* WhatsApp button
+* Email
+* Instagram
+
+---
+
+🔥 NEW CORE FEATURES (IMPORTANT)
+
+---
+
+🆔 AUTO CUSTOMER ID GENERATION
+
+Format:
+MFH001, MFH002, MFH003...
+
+Logic:
+
+* Fetch total clients count from Firestore
+* Increment count
+* Generate ID with leading zeros
+
+Example JS:
+const newId = `MFH${String(count + 1).padStart(3, '0')}`;
+
+Store this ID in database for each client.
+
+---
+
+🔗 CUSTOMER TRACKING SYSTEM (NO LOGIN)
+
+Create dynamic route:
+
+/track/:id
+
+Example:
+/track/MFH001
+
+---
+
+📄 TRACK PAGE (CUSTOMER VIEW)
+
+Fetch data from Firestore using ID.
+
+Display:
+
+* Customer Name
+
+* Project Title
+
+* Project Status:
+  Pending / In Progress / Completed
+
+* Payment Details:
+  Total Amount
+  Paid Amount
+  Remaining Amount
+
+* Progress Bar (0–100%)
+
+* Message:
+  “For queries, contact us on WhatsApp”
+
+👉 No login required
+
+---
+
+🔐 ADMIN DASHBOARD (HIDDEN ACCESS)
+
+Route:
+/admin
+
+IMPORTANT:
+
+* Do NOT show this in navbar
+* Only accessible via direct URL
+
+---
+
+🔑 ADMIN AUTHENTICATION
+
+Use Firebase Authentication (Google Login)
+
+Restrict access:
+
+* Only allow specific admin email
+
+If not admin:
+→ Redirect to homepage
+
+---
+
+📊 ADMIN DASHBOARD FEATURES
+
+1. Add Client
+
+* Name
+* Phone Number
+* Project Title
+* Total Amount
+* Advance Paid
+* Status
+* Progress %
+
+👉 Auto-generate Customer ID
+
+---
+
+2. View Clients
+
+* Table format
+* Show:
+  ID, Name, Phone, Project, Status, Payment
+
+---
+
+3. Update Client
+
+* Update:
+  Status
+  Payment
+  Progress
+
+---
+
+💰 PAYMENT LOGIC
+
+* Remaining = Total - Paid
+* Show status:
+  Paid / Partial / Pending
+
+---
+
+🔗 TRACK LINK GENERATION
+
+After creating client:
+
+Generate link:
+yourwebsite.com/track/MFH001
+
+Display this in admin panel.
+
+---
+
+🗄️ BACKEND (FIREBASE)
+
+Use:
+
+* Firebase Authentication
+* Firestore Database
+
+Collections:
+clients:
+
+* id
+* name
+* phone
+* project
+* totalAmount
+* paidAmount
+* status
+* progress
+* createdAt
+
+---
+
+⚙️ FUNCTIONALITY
+
+* Add client → save in Firestore
+* Fetch by ID → display in track page
+* Update client → reflect instantly
+
+---
+
+🚀 EXTRA FEATURES
+
+* Smooth loading animations
+* Mobile responsive design
+* Clean dashboard UI
+* Status badges (color coded)
+
+---
+
+⚠️ IMPORTANT RULES
+
+* NO customer login system
+* Admin route hidden
+* Clean and minimal UI
+* All buttons must work
+* Proper error handling
+
+---
+
+📦 OUTPUT REQUIRED
+
+* Full working project
+* Firebase integration
+* Folder structure
+* Setup instructions
+
+---
+
+Ensure the app is clean, scalable, and production-ready.

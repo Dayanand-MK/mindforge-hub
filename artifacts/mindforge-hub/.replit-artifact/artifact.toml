@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MindForge Hub"
+version = "1.0.0"
+id = "artifacts/mindforge-hub"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22736
+
+[services.development]
+run = "pnpm --filter @workspace/mindforge-hub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mindforge-hub", "run", "build" ]
+publicDir = "artifacts/mindforge-hub/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22736"
+BASE_PATH = "/"

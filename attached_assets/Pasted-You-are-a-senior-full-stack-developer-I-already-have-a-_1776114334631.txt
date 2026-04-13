@@ -1,0 +1,126 @@
+You are a senior full-stack developer.
+
+I already have a website built using Vite + React. I want to upgrade my "Contact Us" section and build a complete lead management system using Firebase.
+
+### 🔥 REQUIREMENTS
+
+1. Replace Google Form with a custom Contact Form inside my website.
+
+### Contact Form Fields:
+
+* Full Name (required)
+* Phone Number (required)
+* Email (required)
+* Project Type (dropdown: Mini Project, Final Year Project, Research, PPT)
+* Domain (dropdown: AI/ML, Web Dev, Data Science, etc.)
+* Requirements (textarea)
+* Deadline (date)
+* Budget (dropdown)
+
+---
+
+2. Connect this form directly to Firebase Firestore.
+
+### Firebase:
+
+* Use Firestore database
+* Store all submissions in a collection called "leads"
+* Each document should include:
+  {
+  name,
+  phone,
+  email,
+  projectType,
+  domain,
+  requirements,
+  deadline,
+  budget,
+  status: "new",
+  createdAt: timestamp
+  }
+
+---
+
+3. Create an Admin Dashboard (separate route: /admin)
+
+### Admin Features:
+
+* View all leads in a table
+* Show: Name, Phone, Domain, Budget, Status, Date
+* Add filters (status: new / accepted / rejected)
+* Search by name or phone
+
+---
+
+4. Add Lead Actions:
+
+Each lead should have buttons:
+
+* ✅ Accept → updates status to "accepted"
+* ❌ Reject → updates status to "rejected"
+* ✏️ Edit → update lead details
+* 🗑 Delete → remove lead from Firestore
+
+---
+
+5. Authentication (IMPORTANT)
+
+* Use Firebase Authentication (Google login)
+* Only allow access to /admin if email matches:
+  [mindforgehub26@gmail.com](mailto:mindforgehub26@gmail.com)
+* Redirect others to home page
+
+---
+
+6. UI/UX Requirements
+
+* Clean modern UI (Tailwind CSS)
+* Responsive design
+* Toast notifications for actions
+* Loading states
+* Confirmation before delete
+
+---
+
+7. Firestore Security Rules:
+
+* Allow public users to CREATE leads
+* Only admin can READ / UPDATE / DELETE
+
+---
+
+8. Folder Structure:
+
+* /components (Form, Table, Navbar)
+* /pages (Home, Admin)
+* /firebase (config.js)
+
+---
+
+9. Bonus Features (if possible):
+
+* Show total leads count
+* Show accepted / rejected counts
+* Add timestamp formatting
+* Auto-clear form after submit
+
+---
+
+10. Important:
+
+* Use modular Firebase SDK (v9+)
+* Use async/await
+* Write clean and maintainable code
+* Add comments for understanding
+
+---
+
+### OUTPUT:
+
+* Full working React components
+* Firebase config setup
+* Firestore integration
+* Admin dashboard UI
+* Routing setup
+
+Make sure everything is functional and ready to deploy.
