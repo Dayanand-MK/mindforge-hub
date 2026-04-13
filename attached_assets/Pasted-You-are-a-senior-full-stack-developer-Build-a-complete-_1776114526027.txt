@@ -1,0 +1,358 @@
+You are a senior full-stack developer.
+
+Build a complete production-ready web application for a startup called **“MindForge Hub”**.
+
+---
+
+# 🧠 BRAND CONTEXT
+
+MindForge Hub is a **Guided Project Development & Academic Support Platform** that helps students build academic projects with expert guidance.
+
+Use ethical and professional wording like:
+“We guide and assist students in building their projects”.
+
+---
+
+# 🎨 UI / DESIGN REQUIREMENTS
+
+* Dark theme (blue/purple gradient)
+* Glassmorphism UI
+* Smooth animations (Framer Motion if needed)
+* Fully responsive (mobile-first)
+* Clean modern typography
+* Glow hover effects (especially for logo & buttons)
+
+---
+
+# 🌐 TECH STACK
+
+* Frontend: React + Vite
+* Styling: Tailwind CSS
+* Backend: Firebase (Firestore + Auth)
+* Use Firebase Modular SDK (v9+)
+
+---
+
+# 📄 PAGES TO CREATE
+
+## 1. HOME PAGE
+
+Hero Section:
+
+* “Struggling with your Final Year Project?”
+* “We guide you to build it from scratch with complete support”
+
+Buttons:
+
+* “Get Project Guidance” → scroll to contact section
+* “Explore Services”
+
+Sections:
+
+* Services highlights
+* Why Choose Us
+* Testimonials (placeholder)
+* Trust badges
+
+---
+
+## 2. SERVICES PAGE
+
+Include:
+
+* Project Guidance
+* Documentation Services
+* Viva Training
+
+---
+
+## 3. DOMAINS PAGE
+
+Cards:
+
+* AI/ML, Data Science, Web Dev, Python, Java, IoT, Cloud, Cybersecurity, UI/UX
+
+---
+
+## 4. PORTFOLIO PAGE
+
+Show projects:
+
+* Plant Disease Detection
+* Sentiment Analysis
+* Disaster Management System
+
+---
+
+## 5. HOW IT WORKS
+
+Steps:
+
+1. Submit Requirement
+2. Get Quote
+3. Pay Advance
+4. Development Starts
+5. Final Payment
+6. Delivery + Explanation
+
+---
+
+## 6. CONTACT PAGE (IMPORTANT - NO GOOGLE FORM)
+
+Create a CUSTOM CONTACT FORM inside website.
+
+Fields:
+
+* Full Name (required)
+* Phone Number (required)
+* Email (required)
+* Project Type (dropdown)
+* Domain (dropdown)
+* Requirements (textarea)
+* Deadline (date)
+* Budget (dropdown)
+
+On submit:
+👉 Save data directly to Firebase Firestore collection: **leads**
+
+Document structure:
+{
+name,
+phone,
+email,
+projectType,
+domain,
+requirements,
+deadline,
+budget,
+status: "new",
+createdAt: timestamp
+}
+
+---
+
+# 🔥 CORE SYSTEM FEATURES
+
+---
+
+## 🆔 AUTO CUSTOMER ID SYSTEM
+
+Generate IDs like:
+MFH001, MFH002...
+
+Logic:
+
+* Count documents in "clients" collection
+* Generate:
+  const id = `MFH${String(count + 1).padStart(3, '0')}`
+
+---
+
+## 🔗 CUSTOMER TRACKING SYSTEM
+
+Route:
+`/track/:id`
+
+No login required.
+
+---
+
+## 📄 TRACK PAGE
+
+Fetch data using customer ID.
+
+Show:
+
+* Name
+* Project Title
+* Status (Pending / In Progress / Completed)
+* Payment Details (Total, Paid, Remaining)
+* Progress bar
+* Message: “Contact us on WhatsApp for queries”
+
+---
+
+## 💳 PAYMENT PROOF SYSTEM
+
+Add form in track page:
+
+Fields:
+
+* Transaction ID
+* Amount Paid
+* Screenshot Upload
+* Notes
+
+Store in Firestore:
+payments collection:
+{
+customerId,
+txnId,
+amount,
+screenshotURL,
+status: "pending",
+timestamp
+}
+
+---
+
+## 🔐 ADMIN DASHBOARD
+
+Route:
+`/admin` (hidden, not in navbar)
+
+---
+
+## 🔑 ADMIN AUTH
+
+* Use Firebase Google Authentication
+* Only allow:
+  [mindforgehub26@gmail.com](mailto:mindforgehub26@gmail.com)
+
+If not admin → redirect to home
+
+---
+
+## 📊 ADMIN FEATURES
+
+### Leads Management:
+
+* View all leads
+* Accept / Reject
+* Edit
+* Delete
+* Filter by status
+* Search
+
+---
+
+### Client Management:
+
+* Add Client (manual)
+* Auto-generate ID
+* Update:
+
+  * Status
+  * Payment
+  * Progress
+
+---
+
+### Payment Panel:
+
+* View submitted payment proofs
+* Show screenshot
+* Buttons:
+
+  * Verify → update payment
+  * Reject
+
+---
+
+## 💰 PAYMENT LOGIC
+
+* remaining = total - paid
+* Show:
+  Paid / Partial / Pending
+
+---
+
+## 🔗 TRACK LINK GENERATION
+
+After creating client:
+Generate:
+`/track/MFH001`
+
+Display in dashboard
+
+---
+
+# 🗄️ FIRESTORE STRUCTURE
+
+Collections:
+
+### leads
+
+* name, phone, email, etc.
+
+### clients
+
+* id, name, phone, project, status, payment, progress
+
+### payments
+
+* customerId, txnId, screenshot, status
+
+---
+
+# 🔐 FIRESTORE SECURITY RULES
+
+* Public → CREATE leads
+* Admin → READ/UPDATE/DELETE everything
+
+---
+
+# 🧩 EXTRA UI FEATURES
+
+* Floating WhatsApp button
+* Toast notifications
+* Loading states
+* Status badges (color coded)
+* Auto form reset
+* Smooth transitions
+
+---
+
+# 💰 PRICING SECTION
+
+Show only documentation pricing:
+
+* Report: ₹500–1500
+* PPT: ₹300–1000
+* Research Paper: ₹1000–3000
+* Plagiarism Reduction: ₹300–800
+* Formatting: ₹300–700
+
+Note:
+“Project pricing depends on complexity”
+
+---
+
+# 🔮 FUTURE SERVICES
+
+* IoT Projects (Coming Soon)
+* Hardware Projects (Coming Soon)
+
+---
+
+# 🖼️ LOGO
+
+* Add logo in navbar (left)
+* Add favicon
+* Add glow hover effect
+
+---
+
+# ⚠️ IMPORTANT RULES
+
+* NO Google Forms
+* NO customer login
+* Admin route hidden
+* Clean scalable code
+* All features must work
+* Proper error handling
+
+---
+
+# 📦 OUTPUT REQUIRED
+
+* Full React project code
+* Firebase setup
+* Firestore integration
+* Admin dashboard
+* Routing
+* Setup instructions
+
+---
+
+Ensure the app is clean, scalable, modern, and production-ready.
