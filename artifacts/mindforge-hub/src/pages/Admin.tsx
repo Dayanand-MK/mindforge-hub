@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
 import {
-  collection, getDocs, updateDoc, deleteDoc, doc,
+  collection, getDocs, updateDoc, deleteDoc, doc, setDoc,
   serverTimestamp, query, orderBy, getCountFromServer
 } from "firebase/firestore";
 import { auth, db } from "../firebase/config";
@@ -105,7 +105,6 @@ export default function Admin() {
       if (status === "accepted") {
         const lead = leads.find((l) => l.id === id);
         if (lead) {
-          const { setDoc } = await import("firebase/firestore");
           const snap = await getCountFromServer(collection(db, "clients"));
           const newId = `MFH${String(snap.data().count + 1).padStart(3, "0")}`;
           await setDoc(doc(db, "clients", newId), {
@@ -147,7 +146,6 @@ export default function Admin() {
     e.preventDefault();
     try {
       const newId = await generateClientId();
-      const { setDoc } = await import("firebase/firestore");
       const clientRef = doc(db, "clients", newId);
       await setDoc(clientRef, {
         ...clientForm,
