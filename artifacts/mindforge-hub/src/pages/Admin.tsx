@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
 import {
-  collection, getDocs, addDoc, updateDoc, deleteDoc, doc,
+  collection, getDocs, updateDoc, deleteDoc, doc,
   serverTimestamp, query, orderBy, getCountFromServer
 } from "firebase/firestore";
 import { auth, db } from "../firebase/config";
@@ -77,7 +77,7 @@ export default function Admin() {
       const [leadsSnap, clientsSnap, paymentsSnap] = await Promise.all([
         getDocs(query(collection(db, "leads"), orderBy("createdAt", "desc"))),
         getDocs(collection(db, "clients")),
-        getDocs(query(collection(db, "payments"), orderBy("timestamp", "desc"))),
+        getDocs(query(collection(db, "paymentProofs"), orderBy("timestamp", "desc"))),
       ]);
       setLeads(leadsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Lead)));
       setClients(clientsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Client)));
@@ -125,7 +125,9 @@ export default function Admin() {
     e.preventDefault();
     try {
       const newId = await generateClientId();
-      await addDoc(collection(db, "clients"), {
+      const { setDoc } = await import("firebase/firestore");
+      const clientRef = doc(db, "clients", newId);
+      await setDoc(clientRef, {
         ...clientForm,
         id: newId,
         totalAmount: Number(clientForm.totalAmount),
@@ -133,20 +135,6 @@ export default function Admin() {
         progress: Number(clientForm.progress),
         createdAt: serverTimestamp(),
       });
-      // Also write with the generated ID as the document ID
-      const clientRef = doc(db, "clients", newId);
-      await import("firebase/firestore").then(({ setDoc }) =>
-        setDoc(clientRef, {
-          name: clientForm.name,
-          phone: clientForm.phone,
-          project: clientForm.project,
-          status: clientForm.status,
-          totalAmount: Number(clientForm.totalAmount),
-          paidAmount: Number(clientForm.paidAmount),
-          progress: Number(clientForm.progress),
-          createdAt: serverTimestamp(),
-        })
-      );
       showToast(`Client ${newId} created!`, "success");
       setShowAddClient(false);
       setClientForm({ name: "", phone: "", project: "", status: "Pending", totalAmount: "", paidAmount: "0", progress: "0" });
@@ -186,7 +174,7 @@ export default function Admin() {
 
   const updatePaymentStatus = async (id: string, status: string, clientId: string, amount: number) => {
     try {
-      await updateDoc(doc(db, "payments", id), { status });
+      await updateDoc(doc(db, "paymentProofs", id), { status });
       if (status === "verified") {
         const client = clients.find((c) => c.id === clientId);
         if (client) {

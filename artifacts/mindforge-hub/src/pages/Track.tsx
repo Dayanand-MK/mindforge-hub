@@ -77,7 +77,7 @@ export default function Track() {
         screenshotURL = await getDownloadURL(storageRef);
       }
 
-      await addDoc(collection(db, "payments"), {
+      await addDoc(collection(db, "paymentProofs"), {
         customerId: id,
         txnId: paymentForm.txnId,
         amount: Number(paymentForm.amount),
