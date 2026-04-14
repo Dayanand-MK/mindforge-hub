@@ -102,7 +102,29 @@ export default function Admin() {
     try {
       await updateDoc(doc(db, "leads", id), { status });
       setLeads((prev) => prev.map((l) => l.id === id ? { ...l, status } : l));
-      showToast(`Lead marked as ${status}`, "success");
+      if (status === "accepted") {
+        const lead = leads.find((l) => l.id === id);
+        if (lead) {
+          const { setDoc } = await import("firebase/firestore");
+          const snap = await getCountFromServer(collection(db, "clients"));
+          const newId = `MFH${String(snap.data().count + 1).padStart(3, "0")}`;
+          await setDoc(doc(db, "clients", newId), {
+            id: newId,
+            name: lead.name || "",
+            phone: lead.phone || "",
+            project: lead.domain || lead.projectType || "",
+            status: "Pending",
+            totalAmount: 0,
+            paidAmount: 0,
+            progress: 0,
+            createdAt: serverTimestamp(),
+          });
+          showToast('Client created from lead!', 'success');
+          fetchAll();
+        }
+      } else {
+        showToast('Lead marked as ' + status, 'success');
+      }
     } catch { showToast("Update failed", "error"); }
   };
 
