@@ -96,3 +96,16 @@ npm exec --yes --package=pnpm@10.28.2 -- pnpm --filter @workspace/platform-tools
 This test suite resets **only the local demo emulator data** and creates synthetic accounts. Microsoft Edge must be installed; Playwright is included as a development dependency. Do not substitute a real project. Results and screenshots are written to the ignored `qa/` directory.
 
 For real ADC setup, an authorized operator can use `gcloud auth application-default login` with the correct business account and `gcloud auth application-default set-quota-project YOUR_CONFIRMED_PROJECT`. Confirm the account's required Firebase IAM permissions. Keep ADC files outside the repository; the provisioning CLI receives only the project ID and verified UID.
+
+## Vercel output-directory troubleshooting
+
+The website build produces `artifacts/mindforge-hub/dist/public` relative to the repository. The Vercel output directory is relative to the project's selected Root Directory:
+
+| Vercel Root Directory | Output Directory |
+| --- | --- |
+| Repository root (empty or `.`) | `artifacts/mindforge-hub/dist/public` |
+| `artifacts/mindforge-hub` | `dist/public` |
+
+Both configurations use `pnpm install --frozen-lockfile` and `pnpm --filter @workspace/mindforge-hub build`. Select framework preset Other. For the nested root, enable inclusion of source files outside the Root Directory so workspace packages and shared assets remain available. Each location has its own `vercel.json` with the corresponding output path.
+
+If the build finishes with “Generated 12 public pages” but Vercel reports no output directory named `public`, the compile succeeded and Vercel is looking in the wrong place. In Settings > Build and Deployment, match the Root Directory and Output Directory using the table above. Deploy the latest PR commit containing the corrected nested configuration; redeploying an old failed deployment retains its old source configuration. Do not use the source `public` folder as the build output.

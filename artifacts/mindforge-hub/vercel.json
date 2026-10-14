@@ -1,7 +1,7 @@
 {
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/mindforge-hub build",
-  "outputDirectory": "artifacts/mindforge-hub/dist/public",
+  "outputDirectory": "dist/public",
   "framework": null,
   "routes": [
     {
