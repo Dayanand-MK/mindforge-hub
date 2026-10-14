@@ -1,0 +1,63 @@
+// Compatibility copy. Authoritative rules: firebase/firestore.rules
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed() { return request.auth != null && request.auth.token.email_verified == true; }
+  function admin() { return signed() && request.auth.token.get('admin', false) == true && exists(/databases/$(database)/documents/access/$(request.auth.uid)) && get(/databases/$(database)/documents/access/$(request.auth.uid)).data.role == 'admin'; }
+  function text(value, min, max) { return value is string && value.size() >= min && value.size() <= max; }
+  function logged(path, id) { return text(id, 10, 100) && !exists(/databases/$(database)/documents/activity/$(id)) && getAfter(/databases/$(database)/documents/activity/$(id)).data.actorUid == request.auth.uid && getAfter(/databases/$(database)/documents/activity/$(id)).data.entityPath == path && getAfter(/databases/$(database)/documents/activity/$(id)).data.createdAt == request.time; }
+  function validProject(d) { return d.keys().hasOnly(['ownerUid','title','domain','scope','status','deadline','price','sourceEnquiryId','createdAt','updatedAt','auditId']) && text(d.ownerUid,1,128) && exists(/databases/$(database)/documents/users/$(d.ownerUid)) && text(d.title,3,160) && text(d.domain,1,100) && text(d.scope,0,10000) && d.status in ['Awaiting Confirmation','Confirmed','In Progress','Awaiting Customer Review','Completed','Cancelled'] && text(d.deadline,0,10) && d.price is number && d.price >= 0 && d.price <= 10000000 && text(d.sourceEnquiryId,0,128) && d.updatedAt == request.time; }
+  function ownProject(id) { return signed() && get(/databases/$(database)/documents/projects/$(id)).data.ownerUid == request.auth.uid; }
+  match /access/{uid} { allow get: if signed() && (request.auth.uid == uid || admin()); allow list, write: if false; }
+  match /users/{uid} {
+   allow get: if signed() && (request.auth.uid == uid || admin()); allow list: if admin();
+   allow create: if signed() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['name','email','contactPreference','createdAt','updatedAt']) && text(request.resource.data.name,1,100) && request.resource.data.email == request.auth.token.email && request.resource.data.contactPreference in ['WhatsApp','Email'] && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+   allow update: if signed() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','contactPreference','updatedAt']) && text(request.resource.data.name,1,100) && request.resource.data.contactPreference in ['WhatsApp','Email'] && request.resource.data.updatedAt == request.time;
+  }
+  match /submissionLimits/{uid} {
+   allow get: if signed() && request.auth.uid == uid;
+   allow create, update: if signed() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['lastAt','enquiryId']) && request.resource.data.lastAt == request.time && text(request.resource.data.enquiryId,10,100) && (!exists(/databases/$(database)/documents/submissionLimits/$(uid)) || resource.data.lastAt < request.time - duration.value(60,'s')) && getAfter(/databases/$(database)/documents/enquiries/$(request.resource.data.enquiryId)).data.ownerUid == uid && getAfter(/databases/$(database)/documents/enquiries/$(request.resource.data.enquiryId)).data.createdAt == request.time;
+  }
+  match /enquiries/{id} {
+   allow get: if signed() && resource == null;
+   allow read: if admin() || (signed() && resource.data.ownerUid == request.auth.uid);
+   allow create: if signed() && request.resource.data.keys().hasOnly(['ownerUid','title','domain','technologies','requirements','deadline','budget','contactPreference','status','projectId','archived','createdAt','updatedAt']) && request.resource.data.ownerUid == request.auth.uid && text(request.resource.data.title,3,160) && text(request.resource.data.domain,1,100) && text(request.resource.data.technologies,0,300) && text(request.resource.data.requirements,20,5000) && text(request.resource.data.deadline,0,10) && text(request.resource.data.budget,0,100) && request.resource.data.contactPreference in ['Email','WhatsApp'] && request.resource.data.status == 'Enquiry Received' && request.resource.data.projectId == '' && request.resource.data.archived == false && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time && getAfter(/databases/$(database)/documents/submissionLimits/$(request.auth.uid)).data.enquiryId == id && getAfter(/databases/$(database)/documents/submissionLimits/$(request.auth.uid)).data.lastAt == request.time;
+   allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','projectId','archived','updatedAt','auditId']) && request.resource.data.status in ['Enquiry Received','Under Discussion','Awaiting Confirmation','Confirmed','Archived'] && request.resource.data.archived is bool && text(request.resource.data.projectId,0,128) && (request.resource.data.projectId == resource.data.projectId || (resource.data.projectId == '' && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.sourceEnquiryId == id && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerUid == resource.data.ownerUid)) && request.resource.data.updatedAt == request.time && logged('enquiries/'+id,request.resource.data.auditId);
+  }
+  match /projects/{id} {
+   allow read: if admin() || (signed() && resource.data.ownerUid == request.auth.uid);
+   allow create: if admin() && validProject(request.resource.data) && request.resource.data.createdAt == request.time && (request.resource.data.sourceEnquiryId == '' || (get(/databases/$(database)/documents/enquiries/$(request.resource.data.sourceEnquiryId)).data.status == 'Confirmed' && get(/databases/$(database)/documents/enquiries/$(request.resource.data.sourceEnquiryId)).data.projectId == '' && getAfter(/databases/$(database)/documents/enquiries/$(request.resource.data.sourceEnquiryId)).data.projectId == id && getAfter(/databases/$(database)/documents/enquiries/$(request.resource.data.sourceEnquiryId)).data.ownerUid == request.resource.data.ownerUid)) && logged('projects/'+id,request.resource.data.auditId);
+   allow update: if admin() && validProject(request.resource.data) && request.resource.data.ownerUid == resource.data.ownerUid && request.resource.data.sourceEnquiryId == resource.data.sourceEnquiryId && request.resource.data.createdAt == resource.data.createdAt && logged('projects/'+id,request.resource.data.auditId);
+   match /milestones/{mid} {
+    allow read: if admin() || ownProject(id);
+    allow create, update: if admin() && request.resource.data.keys().hasOnly(['title','dueDate','status','updatedAt','auditId']) && text(request.resource.data.title,1,160) && text(request.resource.data.dueDate,0,10) && request.resource.data.status in ['Planned','In Progress','Completed'] && request.resource.data.updatedAt == request.time && logged('projects/'+id+'/milestones/'+mid,request.resource.data.auditId);
+   }
+   match /updates/{updateId} {
+    allow read: if admin() || ownProject(id);
+    allow create: if admin() && request.resource.data.keys().hasOnly(['body','createdAt','auditId']) && text(request.resource.data.body,1,3000) && request.resource.data.createdAt == request.time && logged('projects/'+id+'/updates/'+updateId,request.resource.data.auditId);
+   }
+  }
+  match /internalNotes/{id} {
+   allow read: if admin();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['body','updatedAt','auditId']) && text(request.resource.data.body,0,10000) && request.resource.data.updatedAt == request.time && logged('internalNotes/'+id,request.resource.data.auditId);
+  }
+  match /activity/{id} {
+   allow read: if admin();
+   allow create: if admin() && request.resource.data.keys().hasOnly(['actorUid','action','entityPath','createdAt']) && request.resource.data.actorUid == request.auth.uid && text(request.resource.data.action,1,80) && text(request.resource.data.entityPath,1,300) && request.resource.data.createdAt == request.time;
+  }
+  match /portfolio/{id} {
+   allow read: if resource.data.published == true || admin();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['title','domain','technologies','description','demoUrl','kind','published','updatedAt','auditId']) && text(request.resource.data.title,3,160) && text(request.resource.data.domain,1,100) && text(request.resource.data.technologies,0,300) && text(request.resource.data.description,20,3000) && text(request.resource.data.demoUrl,0,1000) && (request.resource.data.demoUrl == '' || request.resource.data.demoUrl.matches('https://.*')) && request.resource.data.kind in ['Demonstration','Verified client project'] && request.resource.data.published is bool && request.resource.data.updatedAt == request.time && logged('portfolio/'+id,request.resource.data.auditId);
+  }
+  match /siteContent/main {
+   allow read: if true;
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['announcement','pricingNote','updatedAt','auditId']) && text(request.resource.data.announcement,0,200) && text(request.resource.data.pricingNote,1,500) && request.resource.data.updatedAt == request.time && logged('siteContent/main',request.resource.data.auditId);
+  }
+  // Preserve existing records and workflows. There is no public client-list access.
+  match /clients/{id} { allow get: if admin() || (signed() && resource.data.ownerUid == request.auth.uid); allow list, write: if admin(); }
+  match /leads/{id} { allow read, write: if admin(); }
+  match /paymentProofs/{id} { allow read, update, delete: if admin(); allow create: if signed() && request.resource.data.keys().hasOnly(['customerId','ownerUid','txnId','amount','screenshotURL','notes','status','timestamp']) && request.resource.data.ownerUid == request.auth.uid && get(/databases/$(database)/documents/clients/$(request.resource.data.customerId)).data.ownerUid == request.auth.uid && text(request.resource.data.txnId,1,150) && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.amount < 10000000 && text(request.resource.data.screenshotURL,0,2048) && text(request.resource.data.notes,0,2000) && request.resource.data.status == 'pending' && request.resource.data.timestamp == request.time; }
+  match /verifiedTransactions/{id} { allow read, write: if admin(); }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
 import {
   collection, getDocs, updateDoc, deleteDoc, doc, setDoc,
-  serverTimestamp, query, orderBy, getCountFromServer
+  serverTimestamp, query, orderBy, runTransaction, getDoc
 } from "firebase/firestore";
 import { auth, db } from "../firebase/config";
 import { useToast } from "../components/Toast";
 import { useLocation } from "wouter";
 
-const ADMIN_EMAIL = "mindforgehub26@gmail.com";
+
 
 interface Lead {
   id: string; name: string; phone: string; email: string;
@@ -16,7 +16,7 @@ interface Lead {
   deadline?: string; budget?: string; status: string; createdAt?: { toDate: () => Date };
 }
 interface Client {
-  id: string; name: string; phone?: string; project: string;
+  id: string; name: string; phone?: string; ownerUid?: string; project: string;
   status: string; totalAmount: number; paidAmount: number; progress: number;
 }
 interface Payment {
@@ -51,22 +51,25 @@ export default function Admin() {
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [clientForm, setClientForm] = useState({
-    name: "", phone: "", project: "", status: "Pending",
+    name: "", phone: "", ownerUid: "", project: "", status: "Pending",
     totalAmount: "", paidAmount: "0", progress: "0",
   });
 
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u && u.email === ADMIN_EMAIL) {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      const permitted = u ? await Promise.all([u.getIdTokenResult(), getDoc(doc(db, "access", u.uid))]).then(([token, access])=> token.claims.admin === true && access.data()?.role === "admin").catch(()=>false) : false;
+      if (u && u.emailVerified && permitted) {
         setUser(u);
         fetchAll();
       } else if (u) {
+        setUser(null); setLeads([]); setClients([]); setPayments([]);
         signOut(auth);
         showToast("Access denied. Not an admin account.", "error");
         navigate("/");
       }
+      if (!u) { setUser(null); setLeads([]); setClients([]); setPayments([]); }
       setLoading(false);
     });
     return unsub;
@@ -100,30 +103,19 @@ export default function Admin() {
 
   const updateLeadStatus = async (id: string, status: string) => {
     try {
-      await updateDoc(doc(db, "leads", id), { status });
-      setLeads((prev) => prev.map((l) => l.id === id ? { ...l, status } : l));
-      if (status === "accepted") {
-        const lead = leads.find((l) => l.id === id);
-        if (lead) {
-          const snap = await getCountFromServer(collection(db, "clients"));
-          const newId = `MFH${String(snap.data().count + 1).padStart(3, "0")}`;
-          await setDoc(doc(db, "clients", newId), {
-            id: newId,
-            name: lead.name || "",
-            phone: lead.phone || "",
-            project: lead.domain || lead.projectType || "",
-            status: "Pending",
-            totalAmount: 0,
-            paidAmount: 0,
-            progress: 0,
-            createdAt: serverTimestamp(),
-          });
-          showToast('Client created from lead!', 'success');
-          fetchAll();
-        }
-      } else {
-        showToast('Lead marked as ' + status, 'success');
-      }
+      const leadRef = doc(db, "leads", id);
+      const clientRef = doc(collection(db, "clients"));
+      await runTransaction(db, async tx => {
+        const lead = await tx.get(leadRef);
+        if (!lead.exists()) throw new Error("Missing lead");
+        const data = lead.data();
+        if (status === "accepted" && !data.clientId) {
+          tx.set(clientRef, { id: clientRef.id, name: data.name || "", phone: data.phone || "", ownerUid: "", project: data.domain || data.projectType || "", status: "Pending", totalAmount: 0, paidAmount: 0, progress: 0, createdAt: serverTimestamp() });
+          tx.update(leadRef, { status, clientId: clientRef.id });
+        } else { tx.update(leadRef, { status }); }
+      });
+      showToast("Lead updated. Link the client's Firebase UID before sharing tracking access.", "success");
+      await fetchAll();
     } catch { showToast("Update failed", "error"); }
   };
 
@@ -136,11 +128,7 @@ export default function Admin() {
     } catch { showToast("Delete failed", "error"); }
   };
 
-  const generateClientId = async () => {
-    const snap = await getCountFromServer(collection(db, "clients"));
-    const count = snap.data().count;
-    return `MFH${String(count + 1).padStart(3, "0")}`;
-  };
+  const generateClientId = async () => doc(collection(db, "clients")).id;
 
   const addClient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +145,7 @@ export default function Admin() {
       });
       showToast(`Client ${newId} created!`, "success");
       setShowAddClient(false);
-      setClientForm({ name: "", phone: "", project: "", status: "Pending", totalAmount: "", paidAmount: "0", progress: "0" });
+      setClientForm({ name: "", phone: "", ownerUid: "", project: "", status: "Pending", totalAmount: "", paidAmount: "0", progress: "0" });
       fetchAll();
     } catch (e) {
       showToast("Failed to add client", "error");
@@ -170,7 +158,8 @@ export default function Admin() {
     try {
       await updateDoc(doc(db, "clients", editingClient.id), {
         name: editingClient.name,
-        phone: editingClient.phone,
+        phone: editingClient.phone || "",
+        ownerUid: editingClient.ownerUid || "",
         project: editingClient.project,
         status: editingClient.status,
         totalAmount: Number(editingClient.totalAmount),
@@ -192,22 +181,31 @@ export default function Admin() {
     } catch { showToast("Delete failed", "error"); }
   };
 
-  const updatePaymentStatus = async (id: string, status: string, clientId: string, amount: number) => {
+  const updatePaymentStatus = async (id: string, status: string, _clientId: string, _amount: number) => {
+    if (!confirm("Confirm you checked this transaction against your bank/payment-provider record. A screenshot alone is not proof of settlement.")) return;
     try {
-      await updateDoc(doc(db, "paymentProofs", id), { status });
-      if (status === "verified") {
-        const client = clients.find((c) => c.id === clientId);
-        if (client) {
-          const newPaid = Number(client.paidAmount) + Number(amount);
-          await updateDoc(doc(db, "clients", clientId), { paidAmount: newPaid });
-          showToast(`Payment verified! ₹${amount} added to ${clientId}`, "success");
+      await runTransaction(db, async tx => {
+        const paymentRef = doc(db, "paymentProofs", id);
+        const snap = await tx.get(paymentRef);
+        if (!snap.exists()) throw new Error("Missing payment");
+        const payment = snap.data();
+        if (payment.status !== "pending") throw new Error("This proof has already been reviewed.");
+        if (status === "verified") {
+          const amount = Number(payment.amount);
+          if (!Number.isFinite(amount) || amount <= 0) throw new Error("Invalid amount");
+          const clientRef = doc(db, "clients", payment.customerId);
+          // Unique bank transaction receipt prevents duplicate proof documents being credited twice.
+          const receiptRef = doc(db, "verifiedTransactions", encodeURIComponent(String(payment.txnId).trim().toUpperCase()));
+          const client = await tx.get(clientRef);
+          const receipt = await tx.get(receiptRef);
+          if (!client.exists() || receipt.exists()) throw new Error("Missing client or duplicate transaction");
+          tx.update(clientRef, { paidAmount: Number(client.data().paidAmount || 0) + amount });
+          tx.set(receiptRef, { paymentId: id, clientId: payment.customerId, amount, verifiedAt: serverTimestamp() });
         }
-      } else {
-        showToast("Payment rejected", "info");
-      }
-      setPayments((prev) => prev.map((p) => p.id === id ? { ...p, status } : p));
-      fetchAll();
-    } catch { showToast("Update failed", "error"); }
+        tx.update(paymentRef, { status, reviewedAt: serverTimestamp() });
+      });
+      showToast("Payment review saved", "success"); await fetchAll();
+    } catch { showToast("Review not saved: check access, record status and whether this transaction was already credited.", "error"); }
   };
 
   const filteredLeads = leads.filter((l) => {
@@ -232,7 +230,7 @@ export default function Admin() {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-10 text-center max-w-sm">
           <div className="text-5xl mb-4">🔐</div>
-          <h2 className="text-white font-bold text-2xl mb-2 font-['Space_Grotesk']">Admin Access</h2>
+          <h2 className="text-white font-bold text-2xl mb-2 font-display">Admin Access</h2>
           <p className="text-gray-400 text-sm mb-8">Sign in with your authorized Google account to access the admin panel.</p>
           <button onClick={handleLogin} className="btn-primary w-full justify-center py-3 gap-3">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -254,7 +252,7 @@ export default function Admin() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black text-white font-['Space_Grotesk']">Admin Dashboard</h1>
+            <h1 className="text-3xl font-black text-white font-display">Admin Dashboard</h1>
             <p className="text-gray-400 text-sm mt-1">Welcome, {user.displayName}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -427,6 +425,7 @@ export default function Admin() {
 
             {showAddClient && (
               <form onSubmit={addClient} className="glass-dark rounded-xl p-5 mb-6 space-y-4">
+<label className="block">Client Firebase Auth UID (for private tracking)<input className="input-field" value={clientForm.ownerUid} onChange={e => setClientForm({...clientForm, ownerUid:e.target.value.trim()})} /></label>
                 <h4 className="text-white font-semibold mb-2">Add New Client</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -556,6 +555,7 @@ export default function Admin() {
                     </button>
                   </div>
                   <form onSubmit={updateClient} className="space-y-3">
+<label className="block">Client Firebase Auth UID (for private tracking)<input className="input-field" value={editingClient.ownerUid || ""} onChange={e => setEditingClient({...editingClient, ownerUid:e.target.value.trim()})} /></label>
                     {[
                       { label: "Name", key: "name" as const, type: "text" },
                       { label: "Project", key: "project" as const, type: "text" },

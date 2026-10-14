@@ -1,112 +1,90 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import logoImg from "@assets/IMG-20260408-WA0050.jpg_1776114309567.jpeg";
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/services", label: "Services" },
-  { href: "/domains", label: "Domains" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/contact", label: "Contact" },
+import { Menu, X, ArrowUpRight } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
+const links = [
+  ["/", "Home"],
+  ["/services", "Services"],
+  ["/portfolio", "Portfolio"],
+  ["/how-it-works", "How it works"],
+  ["/faq", "FAQs"],
+  ["/contact", "Contact"],
 ];
-
 export default function Navbar() {
-  const [location] = useLocation();
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
+  const [path] = useLocation();
+  const [open, setOpen] = useState(false);
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "glass-dark shadow-lg" : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <img
-              src={logoImg}
-              alt="MindForge Hub"
-              className="h-10 w-10 rounded-xl object-cover logo-glow"
-            />
-            <span className="text-white font-bold text-lg font-['Space_Grotesk'] group-hover:gradient-text transition-all">
-              MindForge Hub
-            </span>
+    <header className="site-header">
+      <div className="site-nav container">
+        <Link href="/" className="brand">
+          <img src="/logo.png" alt="" width="34" height="34" />
+          MindForge Hub<span className="brand-dot">.</span>
+        </Link>
+        <nav className="desktop-nav" aria-label="Main navigation">
+          {links.map(([url, label]) => (
+            <Link
+              href={url}
+              key={url}
+              aria-current={url === path ? "page" : undefined}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="nav-actions">
+          <ThemeToggle />
+          <Link className="nav-sign-in" href="/sign-in">
+            Sign in
           </Link>
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  location === href
-                    ? "bg-purple-600/30 text-purple-300"
-                    : "text-gray-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/track/MFH001" className="btn-outline text-sm py-2 px-4">
-              Track Project
-            </Link>
-            <Link href="/contact" className="btn-primary text-sm py-2 px-4">
-              Get Guidance
-            </Link>
-          </div>
-
-          {/* Mobile menu button */}
+          <Link className="btn-primary nav-cta" href="/contact">
+            Discuss your project
+            <ArrowUpRight size={16} />
+          </Link>
           <button
-            className="md:hidden p-2 text-gray-300 hover:text-white"
-            onClick={() => setMenuOpen(!menuOpen)}
+            className="icon-button nav-menu"
+            aria-label={open ? "Close navigation" : "Open navigation"}
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            onClick={() => setOpen(!open)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setOpen(false);
+            }}
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden glass-dark rounded-xl mb-4 p-4 flex flex-col gap-2">
-            {navLinks.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  location === href ? "bg-purple-600/30 text-purple-300" : "text-gray-300 hover:text-white hover:bg-white/10"
-                }`}
-                onClick={() => setMenuOpen(false)}
-              >
-                {label}
-              </Link>
-            ))}
-            <div className="border-t border-white/10 pt-2 mt-1 flex flex-col gap-2">
-              <Link href="/contact" className="btn-primary text-sm text-center" onClick={() => setMenuOpen(false)}>
-                Get Guidance
-              </Link>
-            </div>
-          </div>
-        )}
       </div>
-    </nav>
+      {open && (
+        <nav
+          className="mobile-nav container"
+          id="mobile-navigation"
+          aria-label="Mobile navigation"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setOpen(false);
+          }}
+        >
+          {links.map(([url, label]) => (
+            <Link
+              href={url}
+              key={url}
+              onClick={() => setOpen(false)}
+              aria-current={url === path ? "page" : undefined}
+            >
+              {label}
+            </Link>
+          ))}
+          <Link href="/sign-in" onClick={() => setOpen(false)}>
+            Sign in / My workspace
+          </Link>
+          <Link
+            href="/contact"
+            className="btn-primary"
+            onClick={() => setOpen(false)}
+          >
+            Discuss your project
+          </Link>
+        </nav>
+      )}
+    </header>
   );
 }

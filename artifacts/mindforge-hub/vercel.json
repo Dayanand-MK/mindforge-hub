@@ -1,5 +1,93 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/mindforge-hub build",
+  "outputDirectory": "dist/public",
+  "framework": null,
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Frame-Options": "DENY"
+      },
+      "continue": true
+    },
+    {
+      "src": "/(?:admin|dashboard)(?:/.*)?/?",
+      "dest": "/app.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "private, no-store"
+      }
+    },
+    {
+      "src": "/sign-in/?",
+      "dest": "/app.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "private, no-store"
+      }
+    },
+    {
+      "src": "/track(?:/[^/]+)?/?",
+      "dest": "/app.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "private, no-store"
+      }
+    },
+    {
+      "src": "/services/?",
+      "dest": "/services/index.html"
+    },
+    {
+      "src": "/domains/?",
+      "dest": "/domains/index.html"
+    },
+    {
+      "src": "/portfolio/?",
+      "dest": "/portfolio/index.html"
+    },
+    {
+      "src": "/how-it-works/?",
+      "dest": "/how-it-works/index.html"
+    },
+    {
+      "src": "/contact/?",
+      "dest": "/contact/index.html"
+    },
+    {
+      "src": "/faq/?",
+      "dest": "/faq/index.html"
+    },
+    {
+      "src": "/privacy/?",
+      "dest": "/privacy/index.html"
+    },
+    {
+      "src": "/blog/?",
+      "dest": "/blog/index.html"
+    },
+    {
+      "src": "/blog/choose-final-year-software-project/?",
+      "dest": "/blog/choose-final-year-software-project/index.html"
+    },
+    {
+      "src": "/blog/software-project-viva/?",
+      "dest": "/blog/software-project-viva/index.html"
+    },
+    {
+      "src": "/terms/?",
+      "dest": "/terms/index.html"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/404.html",
+      "status": 404
+    }
   ]
 }

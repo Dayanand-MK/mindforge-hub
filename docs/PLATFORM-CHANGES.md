@@ -1,0 +1,72 @@
+# Platform changes — 14 October 2026
+
+Compared with the previous optimized source release. Existing working data and public URLs are preserved.
+
+- Public design: new homepage, service/domain/process/portfolio/contact layouts, shared theme tokens, mobile navigation, theme persistence and system preference, restrained Lucide icons.
+- Authentication: shared Google session gate, customer-default access and role checks requiring both a trusted claim and server-owned role record. Secure provisioning CLI replaces the hardcoded admin email.
+- Customer workspace: owned enquiries/projects, submission confirmation and throttling, agreed scope/price, progress and milestones, profile settings.
+- Admin workspace: real counts and deadlines, enquiry filters and atomic conversion, customer history, project/milestone/update management, private notes, portfolio publication/unpublication, announcements/pricing guidance and immutable activity records.
+- Data policies: versioned Firestore/Storage rules, ownership checks, server validation, additive migration guide and isolated security tests.
+- SEO/deployment: 12 prerendered public routes, service terms, dashboard/sign-in rewrites, private noindex/no-store behavior, preserved canonical/social metadata and preview noindex handling.
+- Continuity: original lead/client/payment tools at the protected legacy route. Original source and earlier release ZIP remain separate.
+- Tooling: pinned pnpm 10 workflow, updated Firebase CLI, patched FTP dependency, reproducible Playwright checks. Unused mockup source remains in the archive but is excluded from workspace installation.
+- Deliberately source-managed: service descriptions, indicative price table, FAQs and articles. New chat, notifications, billing and file-sharing controls are not presented as implemented.
+
+## Changed or added files
+
+- `.gitignore`
+- `README.md`
+- `artifacts/mindforge-hub/.env.example`
+- `artifacts/mindforge-hub/index.html`
+- `artifacts/mindforge-hub/scripts/seo.test.mjs`
+- `artifacts/mindforge-hub/src/App.tsx`
+- `artifacts/mindforge-hub/src/components/Footer.tsx`
+- `artifacts/mindforge-hub/src/components/Navbar.tsx`
+- `artifacts/mindforge-hub/src/components/PublicContent.tsx`
+- `artifacts/mindforge-hub/src/components/PublicSections.tsx`
+- `artifacts/mindforge-hub/src/components/ThemeToggle.tsx`
+- `artifacts/mindforge-hub/src/components/WhatsAppButton.tsx`
+- `artifacts/mindforge-hub/src/firebase/config.ts`
+- `artifacts/mindforge-hub/src/index.css`
+- `artifacts/mindforge-hub/src/lib/site.ts`
+- `artifacts/mindforge-hub/src/pages/Admin.tsx`
+- `artifacts/mindforge-hub/src/pages/Contact.tsx`
+- `artifacts/mindforge-hub/src/pages/Domains.tsx`
+- `artifacts/mindforge-hub/src/pages/Home.tsx`
+- `artifacts/mindforge-hub/src/pages/HowItWorks.tsx`
+- `artifacts/mindforge-hub/src/pages/Portfolio.tsx`
+- `artifacts/mindforge-hub/src/pages/Privacy.tsx`
+- `artifacts/mindforge-hub/src/pages/Services.tsx`
+- `artifacts/mindforge-hub/src/pages/Terms.tsx`
+- `artifacts/mindforge-hub/src/platform/Admin.tsx`
+- `artifacts/mindforge-hub/src/platform/Auth.tsx`
+- `artifacts/mindforge-hub/src/platform/Customer.tsx`
+- `artifacts/mindforge-hub/src/platform/Entry.tsx`
+- `artifacts/mindforge-hub/src/platform/Shared.tsx`
+- `artifacts/mindforge-hub/src/platform/Shell.tsx`
+- `artifacts/mindforge-hub/src/platform/data.ts`
+- `artifacts/mindforge-hub/vercel.json`
+- `docs/AUDIT.md`
+- `docs/CHANGED-FILES.md`
+- `docs/HANDOVER.md`
+- `docs/PLATFORM-VALIDATION.md`
+- `docs/REDESIGN-AUDIT.md`
+- `docs/RUN-AND-DEPLOY.md`
+- `docs/SCHEMA-AND-MIGRATION.md`
+- `docs/VALIDATION.md`
+- `docs/firestore.rules.example`
+- `docs/storage.rules.example`
+- `firebase.json`
+- `firebase/firestore.indexes.json`
+- `firebase/firestore.rules`
+- `firebase/storage.rules`
+- `pnpm-lock.yaml`
+- `pnpm-workspace.yaml`
+- `tools/platform/package.json`
+- `tools/platform/provision-admin.mjs`
+- `tools/platform/setup-demo.mjs`
+- `tools/platform/tests/admin-browser.test.mjs`
+- `tools/platform/tests/browser.test.mjs`
+- `tools/platform/tests/integration.mjs`
+- `tools/platform/tests/rules.test.mjs`
+- `vercel.json`

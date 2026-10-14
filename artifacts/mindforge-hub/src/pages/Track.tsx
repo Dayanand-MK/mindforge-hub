@@ -1,8 +1,10 @@
+import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
+import { whatsappUrl } from "@/lib/site";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../firebase/config";
+import { db, storage, auth } from "../firebase/config";
 import { useToast } from "../components/Toast";
 
 interface Client {
@@ -31,9 +33,12 @@ const PAYMENT_STATUS = (total: number, paid: number) => {
 
 export default function Track() {
   const params = useParams<{ id: string }>();
-  const id = params.id?.toUpperCase();
+  const id = params.id;
   const { showToast } = useToast();
 
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => onAuthStateChanged(auth, u => { setUser(u); setClient(null); setAuthReady(true); }), []);
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,24 +48,29 @@ export default function Track() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!authReady || !user) { setLoading(false); return; }
+    setLoading(true); setError("");
+    let active = true;
     if (!id) { setError("Invalid tracking ID"); setLoading(false); return; }
     const fetchClient = async () => {
       try {
         const docRef = doc(db, "clients", id);
         const snap = await getDoc(docRef);
+        if (!active) return;
         if (snap.exists()) {
           setClient({ id: snap.id, ...snap.data() } as Client);
         } else {
           setError("No record found for this ID. Please check your Customer ID.");
         }
       } catch (e) {
-        setError("Failed to fetch data. Please try again.");
+        if(active) setError("Access unavailable. Ask the business to link your signed-in account to this project.");
       } finally {
-        setLoading(false);
+        if(active) setLoading(false);
       }
     };
     fetchClient();
-  }, [id]);
+    return () => { active = false; };
+  }, [id, user, authReady]);
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,18 +78,22 @@ export default function Track() {
       showToast("Transaction ID and amount are required", "error");
       return;
     }
+    const amount = Number(paymentForm.amount);
+    if (!user || !Number.isFinite(amount) || amount <= 0 || paymentForm.txnId.trim().length > 150) { showToast("Enter a valid positive amount and transaction reference.", "error"); return; }
+    if (screenshotFile && (!/^(image\/png|image\/jpeg|image\/webp)$/.test(screenshotFile.type) || screenshotFile.size > 5 * 1024 * 1024)) { showToast("Use a PNG, JPEG or WebP image under 5 MB.", "error"); return; }
     setSubmitting(true);
     try {
       let screenshotURL = "";
       if (screenshotFile) {
-        const storageRef = ref(storage, `payment-proofs/${id}/${Date.now()}_${screenshotFile.name}`);
+        const storageRef = ref(storage, `payment-proofs/${user.uid}/${id}/${crypto.randomUUID()}`);
         await uploadBytes(storageRef, screenshotFile);
         screenshotURL = await getDownloadURL(storageRef);
       }
 
       await addDoc(collection(db, "paymentProofs"), {
         customerId: id,
-        txnId: paymentForm.txnId,
+        ownerUid: user.uid,
+        txnId: paymentForm.txnId.trim(),
         amount: Number(paymentForm.amount),
         screenshotURL,
         notes: paymentForm.notes,
@@ -98,7 +112,8 @@ export default function Track() {
     }
   };
 
-  if (loading) {
+  if (authReady && !user) return <section className="max-w-lg mx-auto pt-28 pb-16 px-4"><h1 className="section-title mb-5">Sign in to track your project</h1><p className="mb-5">Use the Google account linked to your project by the business.</p><button className="btn-primary" onClick={() => signInWithPopup(auth, new GoogleAuthProvider()).catch(() => showToast("Sign-in failed. Please try again.", "error"))}>Sign in with Google</button></section>;
+  if (!authReady || loading) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
         <div className="text-center">
@@ -135,8 +150,8 @@ export default function Track() {
         <div className="glass rounded-2xl p-6 mb-6">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
-              <p className="text-purple-300 text-sm font-medium mb-1">Customer ID</p>
-              <h1 className="text-3xl font-black text-white font-['Space_Grotesk']">{client.id}</h1>
+              <button className="btn-outline mb-4" onClick={() => signOut(auth)}>Sign out</button><p className="text-purple-300 text-sm font-medium mb-1">Customer ID</p>
+              <h1 className="text-3xl font-black text-white font-display">{client.id}</h1>
             </div>
             <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${STATUS_COLORS[client.status] || "badge-pending"}`}>
               {client.status || "Pending"}
@@ -223,7 +238,7 @@ export default function Track() {
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-1.5">Amount Paid (₹) <span className="text-red-400">*</span></label>
                 <input
-                  type="number" value={paymentForm.amount}
+                  type="number" min="0.01" step="0.01" value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
                   className="input-field" placeholder="Amount in rupees" required
                 />
@@ -259,7 +274,7 @@ export default function Track() {
         <div className="glass rounded-2xl p-6 text-center">
           <p className="text-gray-400 mb-4">For queries about your project, contact us directly on WhatsApp</p>
           <a
-            href={`https://wa.me/917000000000?text=Hi%2C%20my%20customer%20ID%20is%20${id}%20and%20I%20have%20a%20query`}
+            href={whatsappUrl(`Hi, my customer ID is ${id} and I have a query.`)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-medium transition-all hover:shadow-lg"
