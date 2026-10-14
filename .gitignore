@@ -47,3 +47,12 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+# Emulator and browser verification output
+*-debug.log
+ui-debug.log
+qa/
