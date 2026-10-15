@@ -186,7 +186,7 @@ export default function AuthGate({
             This account can use the customer workspace. Administrator access
             must be provisioned by the business owner.
           </p>
-          <Link href="/dashboard" className="btn-primary mt-6">
+          <Link href="/account" className="btn-primary mt-6">
             Open my workspace
           </Link>
           <button className="btn-outline mt-4" onClick={() => signOut(auth)}>
