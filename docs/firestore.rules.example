@@ -57,6 +57,14 @@ service cloud.firestore {
   match /leads/{id} { allow read, write: if admin(); }
   match /paymentProofs/{id} { allow read, update, delete: if admin(); allow create: if signed() && request.resource.data.keys().hasOnly(['customerId','ownerUid','txnId','amount','screenshotURL','notes','status','timestamp']) && request.resource.data.ownerUid == request.auth.uid && get(/databases/$(database)/documents/clients/$(request.resource.data.customerId)).data.ownerUid == request.auth.uid && text(request.resource.data.txnId,1,150) && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.amount < 10000000 && text(request.resource.data.screenshotURL,0,2048) && text(request.resource.data.notes,0,2000) && request.resource.data.status == 'pending' && request.resource.data.timestamp == request.time; }
   match /verifiedTransactions/{id} { allow read, write: if admin(); }
+  match /visitorPresence/{uid} {
+   function visitor() { return request.auth != null && request.auth.uid == uid && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+   allow get: if visitor() || admin();
+   allow list: if admin();
+   allow create: if visitor() && request.resource.data.keys().hasOnly(['createdAt','lastSeen']) && request.resource.data.createdAt == request.time && request.resource.data.lastSeen == request.time;
+   allow update: if visitor() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']) && request.resource.data.lastSeen == request.time && resource.data.lastSeen <= request.time - duration.value(55,'s');
+   allow delete: if false;
+  }
   match /{document=**} { allow read, write: if false; }
  }
 }

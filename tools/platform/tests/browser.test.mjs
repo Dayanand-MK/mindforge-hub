@@ -33,6 +33,7 @@ await context.route("**/*", (r) =>
     ? r.continue()
     : r.abort(),
 );
+await context.addInitScript(() => localStorage.setItem("analytics-consent","denied"));
 const page = await context.newPage();
 page.setDefaultTimeout(20000);
 page.on("pageerror", (e) => errors.push(e.message));

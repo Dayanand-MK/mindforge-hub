@@ -21,6 +21,7 @@ try{
  assert.equal(provision(['--role=admin','--apply','--confirm=demo-mindforge']).status,0);assert.equal((await auth.getUser(owner.uid)).customClaims?.admin,true);
  await writeFile(new URL('../../../qa/provision-results.json',import.meta.url),JSON.stringify({passed:['Dry run does not change role','Mismatched project confirmation rejected','Demotion clears claim and changes server role','Promotion restores both trusted controls']},null,2));
  await run('tests/admin-browser.test.mjs');
+ if(process.env.VITE_VISITOR_STATS_ENABLED === 'true') await run('tests/visitor-browser.test.mjs');
  await run('tests/rules.test.mjs');
  console.log('INTEGRATION COMPLETE: public, customer, admin, provisioning and security checks passed.');
 }finally{vite.kill();}
