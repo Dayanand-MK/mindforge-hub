@@ -132,3 +132,11 @@ Firebase Spark currently requires no payment method. Google authentication and F
 Do not enable paid Cloud Functions, phone authentication, or upgrade to Blaze for this setup. Cloud Storage now requires Blaze; existing legacy payment-proof uploads therefore are not part of the Spark-only setup. The new enquiry/project/milestone dashboards do not require file uploads. Keep existing data intact and use email or WhatsApp for attachments if staying on Spark. Do not downgrade an existing billed project without reviewing its existing services.
 
 Sources: https://firebase.google.com/pricing and https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024 (checked October 15, 2026).
+
+## Visitor, customer and administrator navigation
+
+Customers no longer use a dashboard. Ordinary Google sign-in returns to `/`. The public header/menu shows Submit enquiry, My project status and Sign out once signed in. `/account/new`, `/account/enquiries`, `/account/projects` and individual project pages require authentication; they render within the public website, without an admin-style sidebar. A visitor opening a protected action stays on that destination through Google sign-in, then continues there. Optional `next` values on `/sign-in` are restricted to explicit local account routes.
+
+`/admin` and the old `/dashboard` namespace require the two-account admin policy, verified Google identity, signed admin claim and trusted access record. Provisioned admins entering the generic sign-in page go to `/admin`. A non-admin visiting an admin URL receives access denied and a link back to the website. Old customer `/dashboard/...` bookmarks should be replaced with `/account/...` links.
+
+The public Contact page now links to the authenticated enquiry form instead of preparing anonymous WhatsApp enquiry submissions. General public contact links remain available; the website cannot prevent someone from contacting the business independently through email or WhatsApp. Firestore continues enforcing ownership for enquiries, projects, milestones and updates regardless of browser navigation.
